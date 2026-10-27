@@ -1,0 +1,1324 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ouija · El ahorcado del más allá</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Nosifer&family=Creepster&display=swap" rel="stylesheet">
+<style>
+  :root { --dark: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at 50% 42%, #3d1511 0%, #1b0707 45%, #050102 100%);
+    color: #f3dfb8;
+    font-family: 'IM Fell English', Georgia, serif;
+  }
+  #shade {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 15%, rgba(0,0,0,.97) 80%);
+    opacity: var(--dark); transition: opacity 1.5s;
+  }
+  #light {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,160,70,.16), transparent 60%);
+    animation: breathe 4s ease-in-out infinite;
+  }
+  @keyframes breathe { 50% { opacity: .65; } }
+
+  #stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1280px; height: 900px;
+    transform-origin: 50% 50%;
+    transition: filter 80ms;
+  }
+  body.dip #stage { filter: brightness(.5); }
+
+  /* ---------- Header ---------- */
+  #round {
+    position: absolute; left: 40px; top: 20px;
+    font: 700 22px 'Cinzel Decorative', Georgia, serif; color: #c99a5b; letter-spacing: 2px;
+  }
+  #teams {
+    position: absolute; right: 40px; top: 14px;
+    display: flex; gap: 10px; justify-content: flex-end; flex-wrap: nowrap; white-space: nowrap;
+  }
+  .chip {
+    display: flex; gap: 10px; align-items: baseline;
+    padding: 6px 14px; border-radius: 20px;
+    background: rgba(20,5,5,.65); border: 1px solid #5a2c20;
+    font: 20px 'IM Fell English SC', Georgia, serif; color: #b99a78;
+    transition: all .4s;
+  }
+  .chip b { font: 900 22px 'Cinzel Decorative', Georgia, serif; color: #e8c88e; }
+  .chip.them { border-color: #ffb347; color: #ffe2b0; box-shadow: 0 0 16px rgba(255,160,60,.55); }
+  .chip.host { border-color: #8f7bd6; color: #ddd2ff; box-shadow: 0 0 16px rgba(140,110,255,.45); }
+  .chip.host b { color: #cdb2ff; }
+
+  /* ---------- Board ---------- */
+  #board {
+    position: absolute; left: 140px; top: 70px; width: 1000px; height: 600px;
+    border-radius: 30px;
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(255,230,180,0) 35%, rgba(55,25,8,.6) 100%),
+      repeating-linear-gradient(91deg, rgba(90,50,20,.10) 0 2px, transparent 2px 9px, rgba(120,70,30,.08) 9px 11px, transparent 11px 23px),
+      repeating-linear-gradient(89.3deg, transparent 0 40px, rgba(80,40,15,.07) 40px 43px, transparent 43px 97px),
+      linear-gradient(180deg, #dcb57c, #c28f56 50%, #a7733f);
+    box-shadow: 0 30px 70px rgba(0,0,0,.85), inset 0 0 0 3px #5a3416, inset 0 0 50px rgba(60,25,5,.55);
+    filter: brightness(calc(1 - var(--dark) * .6));
+    transition: filter 1.5s;
+    z-index: 2;
+  }
+  #board::before {
+    content: ''; position: absolute; inset: 16px; border-radius: 20px; pointer-events: none;
+    border: 2px solid rgba(50,25,8,.7);
+    box-shadow: inset 0 0 0 6px transparent, inset 0 0 0 7px rgba(50,25,8,.45);
+  }
+  .glyph {
+    position: absolute; transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+    font: 900 56px 'Cinzel Decorative', 'IM Fell English SC', Georgia, serif;
+    color: #2b1407; text-shadow: 0 1px 0 rgba(255,235,200,.35);
+    transition: color .6s, text-shadow .6s, opacity .6s, filter .6s;
+    user-select: none; white-space: nowrap; line-height: 1;
+  }
+  .glyph.num { font-size: 48px; }
+  .glyph.word { font-size: 44px; letter-spacing: 4px; }
+  .glyph.title { font-size: 66px; letter-spacing: 18px; }
+  .glyph.orn { font-family: Georgia, serif; font-weight: 400; font-size: 46px; opacity: .8; }
+  .glyph.hit { color: #7a2e00; text-shadow: 0 0 14px rgba(255,170,60,.95), 0 0 3px #fff3c4; }
+  .glyph.miss { opacity: .25; filter: blur(.5px); }
+  .glyph.flash { animation: glyphflash .9s; }
+  @keyframes glyphflash {
+    40% { transform: translate(-50%, -50%) rotate(var(--r, 0deg)) scale(1.28); text-shadow: 0 0 26px #fff2c0, 0 0 8px #fff; }
+  }
+
+  /* ---------- Planchette ---------- */
+  #planchette { position: absolute; left: 0; top: 0; width: 150px; height: 180px; pointer-events: none; z-index: 3; transform-origin: 75px 82px; }
+  #pbody { position: absolute; inset: 0; transform-origin: 75px 82px; }
+  #pbody.shake { animation: shake .45s; }
+  @keyframes shake { 20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+  #pbody svg { position: absolute; inset: 0; filter: drop-shadow(0 16px 12px rgba(0,0,0,.6)); }
+  #lens {
+    position: absolute; left: 47px; top: 54px; width: 56px; height: 56px; border-radius: 50%;
+    backdrop-filter: brightness(1.4) saturate(1.4) contrast(1.15);
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.5), rgba(255,255,255,.05) 40%, rgba(255,200,120,.08) 70%, rgba(0,0,0,.18));
+    box-shadow: inset 0 0 8px rgba(0,0,0,.5);
+  }
+
+  /* ---------- Candles ---------- */
+  .candle { position: absolute; width: 70px; height: 190px; pointer-events: none; z-index: 4; }
+  .candle .glow {
+    position: absolute; left: -95px; bottom: calc(var(--h) - 95px); width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,170,70,.38) 0%, rgba(255,120,30,.12) 40%, transparent 70%);
+    mix-blend-mode: screen; transition: opacity .8s, transform .8s;
+    animation: glow 2.6s ease-in-out infinite; animation-delay: var(--d);
+  }
+  @keyframes glow { 50% { transform: scale(.9); opacity: .8; } }
+  .candle .wax {
+    position: absolute; left: 8px; bottom: 0; width: 54px; height: var(--h); border-radius: 6px 6px 8px 8px;
+    background: linear-gradient(90deg, #8f816a, #e9dec7 30%, #f6eddb 45%, #d3c4a6 75%, #7c6f5a);
+    box-shadow: 0 12px 20px rgba(0,0,0,.6);
+  }
+  .candle .wax::before {
+    content: ''; position: absolute; left: 0; right: 0; top: -7px; height: 14px; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 40%, #fff7e6, #d9cbb0 70%);
+  }
+  .candle .wick { position: absolute; left: 33px; bottom: calc(var(--h) + 2px); width: 3px; height: 14px; background: #1c120c; border-radius: 2px; }
+  .candle .flame {
+    position: absolute; left: 24px; bottom: calc(var(--h) + 10px); width: 22px; height: 44px;
+    border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+    background: radial-gradient(ellipse at 50% 78%, #fff 0%, #ffe9a6 22%, #ffa333 52%, rgba(255,80,0,0) 74%);
+    transform-origin: 50% 90%;
+    animation: flicker 1.3s ease-in-out infinite; animation-delay: var(--d);
+    transition: transform .5s, opacity .5s;
+  }
+  @keyframes flicker {
+    0%, 100% { transform: scale(1, 1) skewX(0deg); }
+    20% { transform: scale(.96, 1.06) skewX(2deg); }
+    45% { transform: scale(1.03, .94) skewX(-3deg); }
+    70% { transform: scale(.98, 1.08) skewX(1deg); }
+  }
+  .candle.out .flame { animation: none; transform: scale(.2, 0); opacity: 0; }
+  .candle.out .glow { opacity: 0; animation: none; }
+  .candle.flare .glow { transform: scale(1.6); }
+  .smoke {
+    position: absolute; left: 25px; width: 20px; height: 20px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,200,200,.45), rgba(160,160,160,0) 70%);
+    animation: rise 2.6s ease-out forwards;
+  }
+  @keyframes rise { to { transform: translate(var(--sx), -150px) scale(4); opacity: 0; } }
+
+  /* ---------- Word ---------- */
+  #word {
+    position: absolute; left: 60px; right: 60px; top: 700px;
+    display: flex; flex-wrap: nowrap; justify-content: center; column-gap: calc(var(--tw) * .9);
+  }
+  .wgroup { display: flex; gap: calc(var(--tw) * .18); }
+  .tile {
+    width: var(--tw); height: calc(var(--tw) * 1.3);
+    border-bottom: 4px solid #c99a5b;
+    display: flex; align-items: flex-end; justify-content: center;
+    font: 900 calc(var(--tw) * .9) 'Cinzel Decorative', Georgia, serif; line-height: 1;
+    color: transparent;
+  }
+  .tile.on { color: #ffd9a0; text-shadow: 0 0 18px #ff9a2e; animation: appear .7s; }
+  .tile.lost { color: #e0483a; text-shadow: 0 0 16px #900; animation: appear .7s; }
+  .tile.punct { border-color: transparent; }
+  .tile.win { animation: winpulse 1.4s ease-in-out infinite; }
+  @keyframes appear { 0% { opacity: 0; transform: translateY(-16px) scale(1.5); filter: blur(6px); } 100% { opacity: 1; transform: none; filter: none; } }
+  @keyframes winpulse { 50% { text-shadow: 0 0 30px #ffcf6e, 0 0 6px #fff; transform: translateY(-4px); } }
+
+  #msg {
+    position: absolute; left: 0; right: 0; top: 786px; text-align: center;
+    font: italic 30px 'IM Fell English', Georgia, serif; color: #f0d39c;
+    text-shadow: 0 0 12px rgba(255,140,40,.5);
+    opacity: 0; transition: opacity .45s;
+  }
+  #msg.show { opacity: 1; }
+  #hint {
+    position: absolute; left: 120px; right: 120px; top: 832px; text-align: center;
+    font: 23px/1.2 'IM Fell English SC', Georgia, serif; color: #cdb2ff;
+    text-shadow: 0 0 14px rgba(150,100,255,.6);
+    opacity: 0; letter-spacing: 8px; transition: opacity 1.4s, letter-spacing 1.4s;
+  }
+  #hint.show { opacity: 1; letter-spacing: 1px; }
+
+  #hostbtn {
+    position: fixed; left: 12px; bottom: 10px; z-index: 20;
+    background: none; border: 0; color: #c99a5b; opacity: .12; cursor: pointer;
+    font: 16px 'IM Fell English SC', Georgia, serif;
+  }
+  #hostbtn:hover { opacity: 1; }
+
+  /* ---------- Game Over ---------- */
+  #gameover { position: fixed; inset: 0; z-index: 25; pointer-events: none; visibility: hidden; }
+  #gameover.on { visibility: visible; }
+  #gameover::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(90,0,0,.35), rgba(25,0,0,.92));
+  }
+  #gameover.on::before { animation: fadein 2.5s ease .3s forwards; }
+  #gameover .blood { position: absolute; inset: 0; filter: url(#goo); }
+  .band { position: absolute; left: -2%; right: -2%; top: 0; height: 0; background: #8a0303; animation: band 1.2s ease-out forwards; }
+  @keyframes band { to { height: 7vh; } }
+  .drip {
+    position: absolute; top: 0; width: var(--w); height: 0; background: #8a0303;
+    border-radius: 0 0 50% 50% / 0 0 30px 30px;
+    animation: drip var(--dur) cubic-bezier(.3, .1, .6, 1) var(--del) forwards;
+  }
+  .drip::after {
+    content: ''; position: absolute; left: 50%; bottom: calc(var(--w) * -.5);
+    width: calc(var(--w) * 1.35); height: calc(var(--w) * 1.5); transform: translateX(-50%);
+    background: inherit; border-radius: 50%;
+  }
+  @keyframes drip { to { height: var(--len); } }
+  .splat {
+    position: absolute; width: var(--s); height: var(--s); border-radius: 50%; background: #8a0303;
+    transform: scale(0); animation: splat .22s ease-out var(--del) forwards;
+  }
+  @keyframes splat { to { transform: scale(1); } }
+  .go-text {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse 55% 32% at 50% 50%, rgba(0,0,0,.7), transparent); opacity: 0;
+  }
+  #gameover.on .go-text { animation: fadein 1s ease .8s forwards; }
+  .go-text h2 {
+    margin: 0; font: 400 clamp(60px, 11vw, 170px) 'Nosifer', Impact, sans-serif; color: #ff1a1a; letter-spacing: 6px;
+    -webkit-text-stroke: 3px #140000;
+    text-shadow: 0 6px 0 #000, 0 0 40px rgba(0,0,0,.9), 0 0 24px rgba(255,30,30,.55);
+    opacity: 0; transform: scale(2.2); filter: blur(12px);
+  }
+  #gameover.on h2 { animation: goin .7s cubic-bezier(.2, .8, .3, 1.2) .9s forwards, goshake 3s ease-in-out 1.6s infinite; }
+  @keyframes goin { to { opacity: 1; transform: scale(1); filter: blur(0); } }
+  @keyframes goshake {
+    0%, 90%, 100% { transform: translate(0, 0); }
+    93% { transform: translate(-5px, 2px); } 96% { transform: translate(4px, -2px); } 98% { transform: translate(-2px, 1px); }
+  }
+  .go-text p { margin: 0; font: italic clamp(24px, 2.8vw, 44px) 'IM Fell English', Georgia, serif; color: #ffd9c0; text-shadow: 0 0 14px #000, 0 0 4px #000; opacity: 0; }
+  .go-text small { font: clamp(18px, 1.8vw, 28px) 'IM Fell English SC', Georgia, serif; color: #cdb2ff; text-shadow: 0 0 12px #000, 0 0 4px #000; opacity: 0; }
+  #gameover.on p, #gameover.on small { animation: fadein .8s ease 1.9s forwards; }
+  @keyframes fadein { to { opacity: 1; } }
+
+  /* ---------- Ganar: calabaza en llamas ---------- */
+  #winfx { position: fixed; inset: 0; z-index: 25; pointer-events: none; visibility: hidden; opacity: 0; transition: opacity .6s; }
+  #winfx.on { visibility: visible; opacity: 1; }
+  #firecv { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #win-name, #win-pts { position: absolute; left: 0; right: 0; text-align: center; opacity: 0; }
+  #win-name {
+    bottom: 10%; font: 400 clamp(56px, 8.5vw, 150px) 'Creepster', 'Cinzel Decorative', Impact, sans-serif; color: #ff9a1f; letter-spacing: 6px;
+    -webkit-text-stroke: 2px #2a0d00;
+    text-shadow: 0 6px 0 #1a0700, 0 0 40px rgba(255,140,20,.9), 0 0 90px rgba(255,90,0,.6);
+    transform: scale(3);
+  }
+  #winfx.on #win-name { animation: slam .5s cubic-bezier(.2, .8, .3, 1.3) 2.1s forwards, winglow 1.8s ease-in-out 2.7s infinite; }
+  @keyframes slam { to { opacity: 1; transform: scale(1); } }
+  @keyframes winglow { 50% { text-shadow: 0 6px 0 #1a0700, 0 0 60px rgba(255,180,40,1), 0 0 120px rgba(255,110,0,.8); } }
+  #win-pts { bottom: 4.5%; font: clamp(20px, 2vw, 32px) 'IM Fell English SC', Georgia, serif; color: #e9ffd0; text-shadow: 0 0 12px #000, 0 0 4px #000; }
+  #winfx.on #win-pts { animation: fadein .8s ease 2.8s forwards; }
+
+  /* ---------- Intro ---------- */
+  #intro {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    background: radial-gradient(ellipse at 50% 45%, rgba(40,8,8,.92), rgba(0,0,0,.98));
+    transition: opacity 1.2s;
+  }
+  #intro.gone { opacity: 0; pointer-events: none; }
+  #intro h1 {
+    margin: 0; font: 900 120px 'Cinzel Decorative', Georgia, serif; letter-spacing: 24px; color: #f0c987;
+    text-shadow: 0 0 30px rgba(255,120,30,.7); animation: breathe 3s ease-in-out infinite;
+  }
+  #intro p { margin: 0; font: italic 30px 'IM Fell English', Georgia, serif; color: #d9b98a; }
+  #intro small { font: 18px 'IM Fell English', Georgia, serif; color: #8f7458; text-align: center; line-height: 1.6; }
+  #start {
+    margin-top: 16px; padding: 16px 40px; border-radius: 40px; cursor: pointer;
+    background: #5e160c; color: #ffe0b0; border: 1px solid #b2401f;
+    font: 700 24px 'Cinzel Decorative', Georgia, serif; letter-spacing: 2px;
+    box-shadow: 0 0 30px rgba(255,80,20,.35);
+  }
+  #start:hover { background: #7d1e10; }
+</style>
+</head>
+<body>
+<div id="shade"></div>
+<div id="light"></div>
+
+<div id="stage">
+  <div id="round"></div>
+  <div id="teams"></div>
+  <div id="board">
+    <div id="planchette">
+      <div id="pbody">
+        <svg width="150" height="180" viewBox="0 0 150 180">
+          <defs>
+            <linearGradient id="bone" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f6ebd2"/><stop offset=".6" stop-color="#d8c39a"/><stop offset="1" stop-color="#a88d5f"/>
+            </linearGradient>
+            <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fbe6a8"/><stop offset=".5" stop-color="#a8792a"/><stop offset="1" stop-color="#f0cf7a"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#bone)" fill-rule="evenodd" stroke="#4a2e12" stroke-width="2"
+            d="M75 4 C105 35 146 75 144 118 C142 158 108 176 75 156 C42 176 8 158 6 118 C4 75 45 35 75 4 Z
+               M47 82 a28 28 0 1 0 56 0 a28 28 0 1 0 -56 0 Z"/>
+          <circle cx="75" cy="82" r="30" fill="none" stroke="url(#gold)" stroke-width="5"/>
+          <text x="75" y="140" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#6b4a22">☾ ✶ ☽</text>
+        </svg>
+        <div id="lens"></div>
+      </div>
+    </div>
+  </div>
+  <div id="candles"></div>
+  <div id="word"></div>
+  <div id="msg"></div>
+  <div id="hint"></div>
+</div>
+
+<button id="hostbtn" title="Shift+H">☾ panel</button>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/></filter>
+</svg>
+<div id="gameover">
+  <div class="blood"></div>
+  <div class="go-text"><h2>GAME OVER</h2><p id="go-answer"></p><small>+1 punto para el Fantasma</small></div>
+</div>
+
+<div id="winfx">
+  <canvas id="firecv"></canvas>
+  <div id="win-name"></div>
+  <div id="win-pts">+1 punto · liberaron al espíritu</div>
+</div>
+
+<div id="intro">
+  <h1>OUIJA</h1>
+  <p>El ahorcado del más allá</p>
+  <button id="start">Invocar al espíritu</button>
+  <small>Al invocar se abre tu panel secreto en otra ventana (permite ventanas emergentes).<br>
+    Comparte solo <b>esta</b> pestaña, con audio. Teclea las letras que diga el equipo.</small>
+</div>
+
+<script>
+/* ============================================================
+   Palabras. Edita aquí: c = categoría, t = respuesta, h = pista.
+   ============================================================ */
+const WORDS = [
+  { c: 'pelicula', t: 'El Exorcista', h: 'Su escalera en Georgetown hoy es atracción turística.' },
+  { c: 'pelicula', t: 'El Conjuro', h: 'Basada en los archivos de un matrimonio que coleccionaba objetos malditos.' },
+  { c: 'pelicula', t: 'Annabelle', h: 'La original es de trapo y vive detrás de un vidrio en Connecticut.' },
+  { c: 'pelicula', t: 'El Resplandor', h: 'El autor del libro odió esta adaptación.' },
+  { c: 'pelicula', t: 'Hereditary', h: 'Ópera prima de su director: un funeral, maquetas en miniatura y un clic con la lengua.' },
+  { c: 'pelicula', t: 'Scream', h: 'Sus personajes se saben las reglas del género… y aun así no sobreviven.' },
+  { c: 'pelicula', t: 'Destino Final', h: 'No hay asesino: hay un orden que tiene que cumplirse.' },
+  { c: 'pelicula', t: 'Actividad Paranormal', h: 'Costó unos 15 mil dólares y casi todo pasa en una recámara.' },
+  { c: 'pelicula', t: 'Viernes 13', h: 'En la primera, quien mata no es quien todos creen.' },
+  { c: 'pelicula', t: 'Halloween', h: 'El propio director compuso la música, en compás de 5/4.' },
+  { c: 'pelicula', t: 'La Monja', h: 'Spin-off que viaja a 1952, muy lejos de cualquier casa en Estados Unidos.' },
+  { c: 'pelicula', t: 'El Aro', h: 'Remake de una película japonesa; el agua y un pozo son clave.' },
+  { c: 'pelicula', t: 'Psicosis', h: 'Su director pidió a los cines no dejar entrar a nadie una vez empezada la función.' },
+  { c: 'pelicula', t: 'Alien', h: 'La heroína termina sola, en ropa interior, rescatando a un gato.' },
+  { c: 'pelicula', t: 'Tiburón', h: 'El efecto mecánico fallaba tanto que casi no se ve al monstruo… y eso la hizo mejor.' },
+  { c: 'pelicula', t: 'Nosferatu', h: 'Versión no autorizada de una novela; un juez ordenó destruir todas las copias.' },
+  { c: 'pelicula', t: 'Midsommar', h: 'Una ruptura de pareja disfrazada de viaje a un pueblito lleno de flores.' },
+  { c: 'pelicula', t: 'Insidious', h: 'Hay que ir a rescatar a alguien a un lugar llamado «lo más lejano».' },
+  { c: 'pelicula', t: 'Poltergeist', h: 'Dicen que los esqueletos de una escena eran reales.' },
+  { c: 'pelicula', t: 'Candyman', h: 'Un multifamiliar de Chicago, una leyenda urbana y muchas abejas.' },
+  { c: 'pelicula', t: 'Sonríe', h: 'Un trauma que se pasa de persona en persona como cadena de WhatsApp.' },
+  { c: 'pelicula', t: 'Terrifier', h: 'Hubo gente que se desmayó en el cine; el villano nunca dice una palabra.' },
+  { c: 'pelicula', t: 'Babadook', h: 'Un libro infantil que aparece solo en el librero… y no se deja tirar.' },
+  { c: 'pelicula', t: 'La Bruja', h: 'Una familia puritana desterrada al borde de un bosque en el siglo XVII.' },
+  { c: 'pelicula', t: 'El Orfanato', h: 'Producida por Guillermo del Toro: una casa junto al mar y un juego de «un, dos, tres».' },
+  { c: 'pelicula', t: 'Huesera', h: 'Ópera prima mexicana de 2022: un embarazo y un sonido de crujidos.' },
+  { c: 'pelicula', t: 'Siniestro', h: 'Un escritor encuentra unas cintas Super 8 en el ático de su casa nueva.' },
+  { c: 'pelicula', t: 'El Juego del Miedo', h: 'Dos hombres despiertan encadenados en un baño; costó poco más de un millón de dólares.' },
+  { c: 'pelicula', t: 'Nosotros', h: 'Unas vacaciones en la playa, un salón de espejos y conejos en túneles.' },
+  { c: 'pelicula', t: 'Mamá', h: 'Dos niñas pasan cinco años solas en una cabaña del bosque… o no tan solas.' },
+  { c: 'pelicula', t: 'Un Lugar en Silencio', h: 'Ahí nadie se atreve a gritar, ni siquiera para dar a luz.' },
+  { c: 'pelicula', t: 'Háblame', h: 'Adolescentes australianos se pasan una mano embalsamada en las fiestas.' },
+  { c: 'pelicula', t: '13 Fantasmas', h: 'Remake de 2001 donde la casa misma es una máquina.' },
+
+  { c: 'personaje', t: 'Chucky', h: 'Su apodo viene de su nombre real; su novia tiene su propia película.' },
+  { c: 'personaje', t: 'Freddy Krueger', h: '«Hijo de mil maníacos»; ataca donde no puedes estar despierto.' },
+  { c: 'personaje', t: 'Jason Voorhees', h: 'Se ahogó de niño y su mamá cobró venganza antes que él.' },
+  { c: 'personaje', t: 'Pennywise', h: 'Despierta cada 27 años.' },
+  { c: 'personaje', t: 'Ghostface', h: 'No es una persona: es un disfraz que han usado varios.' },
+  { c: 'personaje', t: 'Michael Myers', h: 'Su máscara era de un capitán espacial, pintada de blanco.' },
+  { c: 'personaje', t: 'Jigsaw', h: 'Ingeniero enfermo que nunca mata con sus propias manos.' },
+  { c: 'personaje', t: 'Hannibal Lecter', h: 'Doctor, amante de la ópera y de un buen Chianti.' },
+  { c: 'personaje', t: 'Samara', h: 'Hija adoptiva de un criador de caballos.' },
+  { c: 'personaje', t: 'Valak', h: 'Antes de tener película propia, apareció como un cuadro en una casa de Londres.' },
+  { c: 'personaje', t: 'La Llorona', h: 'Se le escucha más de lo que se le ve, sobre todo cerca del agua.' },
+  { c: 'personaje', t: 'Carrie', h: 'Protagonista de la primera novela publicada de su autor.' },
+  { c: 'personaje', t: 'Pinhead', h: 'Líder de los Cenobitas.' },
+  { c: 'personaje', t: 'Leatherface', h: 'Inspirado en un asesino real de Wisconsin; trabaja en familia.' },
+  { c: 'personaje', t: 'Damien', h: 'Hijo adoptivo de un embajador estadounidense.' },
+  { c: 'personaje', t: 'Drácula', h: 'Llegó a Inglaterra en un barco donde toda la tripulación desapareció.' },
+  { c: 'personaje', t: 'M3GAN', h: 'Juguete con inteligencia artificial que se toma su trabajo demasiado en serio.' },
+
+  { c: 'personaje', t: 'Norman Bates', h: 'Atiende un pequeño negocio familiar junto a la carretera… con ayuda de su madre.' },
+  { c: 'personaje', t: 'Jack Torrance', h: 'Escritor que acepta cuidar un edificio todo el invierno. Mucho trabajo y nada de diversión…' },
+  { c: 'personaje', t: 'Esther', h: 'Parece de nueve años, pinta muy bien y nunca se quita los listones del cuello y las muñecas.' },
+  { c: 'personaje', t: 'Beetlejuice', h: 'Se anuncia como «bioexorcista» y viste traje a rayas.' },
+  { c: 'personaje', t: 'Frankenstein', h: 'Todo el mundo lo llama así, aunque en realidad ese es el apellido de su creador.' },
+  { c: 'mexa', t: 'Catrina', h: 'Al principio se llamaba «Garbancera» y era una burla de quienes querían parecer europeas.' },
+  { c: 'mexa', t: 'Pan de Muerto', h: 'Se hornea solo en temporada y su decoración representa partes del cuerpo.' },
+  { c: 'mexa', t: 'Cempasúchil', h: 'En náhuatl significa «veinte flores».' },
+  { c: 'mexa', t: 'Calaverita', h: 'Género literario de temporada: rima y burla.' },
+  { c: 'mexa', t: 'Ofrenda', h: 'Suele tener niveles, sal, agua y algo que el invitado disfrutaba.' },
+  { c: 'mexa', t: 'Xoloitzcuintle', h: 'Raza nativa con más de 3,000 años de historia y casi sin pelo.' },
+  { c: 'mexa', t: 'Chupacabras', h: 'Su fama empezó en Puerto Rico en 1995 y luego cruzó a México.' },
+  { c: 'mexa', t: 'Ánimas que no oscurezca', h: 'Frase de abuelita para pedir que algo NO ocurra.' },
+  { c: 'mexa', t: 'Limpia', h: 'Ritual con huevo, ramas y humo.' },
+  { c: 'mexa', t: 'Chamuco', h: 'Apodo mexicano para alguien con cuernos y cola.' },
+
+  { c: 'success', t: 'Miriam', h: 'Nombre propio. Está más cerca de lo que crees.' },
+  { c: 'success', t: 'Bug', h: 'Nadie lo invita, pero siempre aparece en producción.' },
+  { c: 'success', t: 'Escalación', h: 'Lo que pasa cuando el caso ya no es solo tuyo.' },
+  { c: 'success', t: 'Estoico', h: 'Filosofía griega que practicas en cada llamada difícil.' },
+];
+WORDS.forEach(w => { w.id = w.c + ':' + w.t; });
+
+const CATS = { pelicula: 'Película', personaje: 'Personaje', mexa: 'Cultura pop mexicana', success: 'Ronda Success' };
+const FILTERS = {
+  mix: { label: 'Películas + personajes + cultura mexa', cats: ['pelicula', 'personaje', 'mexa'] },
+  pelicula: { label: 'Solo películas', cats: ['pelicula'] },
+  personaje: { label: 'Solo personajes', cats: ['personaje'] },
+  mexa: { label: 'Solo cultura pop mexicana', cats: ['mexa'] },
+  success: { label: 'Ronda Success', cats: ['success'] },
+  all: { label: 'Todas', cats: ['pelicula', 'personaje', 'mexa', 'success'] },
+};
+
+const $ = s => document.querySelector(s);
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const isKey = c => /^[A-Z0-9]$/.test(c);
+
+/* ============================================================ State */
+const KEY = 'ouija-ahorcado-v2';
+const S = {
+  entry: null, keys: new Set(), used: new Set(), hits: new Set(),
+  lit: 6, total: 6, status: 'idle', hintShown: false, round: 0,
+  // teams[0] = los que adivinan, teams[1] = el anfitrión
+  teams: [{ name: 'Equipo: La Calabaza', pts: 0 }, { name: 'Equipo: Fantasma', pts: 0 }],
+  usedIds: new Set(),
+  settings: { candles: 6, sound: true, vol: 80, filter: 'mix' },
+};
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({
+      teams: S.teams, usedIds: [...S.usedIds], round: S.round, settings: S.settings,
+    }));
+  } catch (e) {}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (!d) return;
+    S.teams = d.teams || S.teams; S.round = d.round || 0;
+    S.usedIds = new Set(d.usedIds || []); Object.assign(S.settings, d.settings || {});
+  } catch (e) {}
+}
+load();
+
+/* ============================================================ Audio (sintetizado, sin archivos) */
+const audio = (() => {
+  let ctx, master, rev, white, scrapeGain;
+  function noise(sec, brown) {
+    const b = ctx.createBuffer(1, ctx.sampleRate * sec, ctx.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < d.length; i++) {
+      const w = Math.random() * 2 - 1;
+      if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w;
+    }
+    return b;
+  }
+  function impulse(sec) {
+    const len = ctx.sampleRate * sec, b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = b.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    }
+    return b;
+  }
+  function env(g, t, peak, attack, dur) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  }
+  function tone(f, t, dur, peak, type = 'sine') {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = f; env(g, t, peak, 0.01, dur);
+    o.connect(g); g.connect(master); g.connect(rev);
+    o.start(t); o.stop(t + dur + 0.05);
+    return o;
+  }
+  function bell(f, t, peak = 0.16) { tone(f, t, 2.4, peak); tone(f * 2.76, t, 0.9, peak * 0.25); tone(f * 5.4, t, 0.4, peak * 0.07); }
+  function hiss(t, dur, peak, type, freq, Q = 1, attack = 0.02) {
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = white; f.type = type; f.frequency.value = freq; f.Q.value = Q; env(g, t, peak, attack, dur);
+    s.connect(f).connect(g); g.connect(master); g.connect(rev);
+    s.start(t); s.stop(t + dur + 0.05);
+    return f;
+  }
+  const now = () => ctx.currentTime;
+  return {
+    start() {
+      if (ctx) return;
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctx.resume();
+      master = ctx.createGain(); master.connect(ctx.destination);
+      rev = ctx.createConvolver(); rev.buffer = impulse(3.2);
+      const rg = ctx.createGain(); rg.gain.value = 0.35; rev.connect(rg).connect(master);
+      white = noise(3, false);
+      // viento
+      const wind = ctx.createBufferSource(); wind.buffer = noise(8, true); wind.loop = true;
+      const wf = ctx.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.7;
+      const wg = ctx.createGain(); wg.gain.value = 0.14;
+      const l1 = ctx.createOscillator(), l1g = ctx.createGain(); l1.frequency.value = 0.07; l1g.gain.value = 260; l1.connect(l1g).connect(wf.frequency);
+      const l2 = ctx.createOscillator(), l2g = ctx.createGain(); l2.frequency.value = 0.11; l2g.gain.value = 0.08; l2.connect(l2g).connect(wg.gain);
+      wind.connect(wf).connect(wg); wg.connect(master); wg.connect(rev);
+      wind.start(); l1.start(); l2.start();
+      // dron grave
+      [[55, 0.05], [82.4, 0.025], [58.3, 0.02]].forEach(([f, v]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; g.gain.value = v; o.connect(g).connect(master); o.start();
+      });
+      // madera rozando (sigue la velocidad del puntero)
+      const sc = ctx.createBufferSource(); sc.buffer = white; sc.loop = true;
+      const sf = ctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 850; sf.Q.value = 0.9;
+      const sl = ctx.createBiquadFilter(); sl.type = 'lowpass'; sl.frequency.value = 2400;
+      scrapeGain = ctx.createGain(); scrapeGain.gain.value = 0;
+      sc.connect(sf).connect(sl).connect(scrapeGain).connect(master); sc.start();
+      this.setVol();
+    },
+    setVol() { if (ctx) master.gain.setTargetAtTime(S.settings.sound ? S.settings.vol / 100 : 0, now(), 0.1); },
+    scrape(v) { if (ctx) scrapeGain.gain.setTargetAtTime(Math.min(0.4, v * 0.55), now(), 0.04); },
+    chime() { if (!ctx) return; const t = now(); bell(440, t); bell(523.25, t + 0.13); bell(659.25, t + 0.26); },
+    wrong() {
+      if (!ctx) return; const t = now();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.55); env(g, t, 0.55, 0.01, 0.8);
+      o.connect(g).connect(master); o.start(t); o.stop(t + 0.9);
+      hiss(t, 0.35, 0.25, 'lowpass', 300);
+      tone(110, t, 1.4, 0.06, 'triangle'); tone(116.5, t, 1.4, 0.06, 'triangle');
+    },
+    candleOut() { if (ctx) hiss(now(), 0.45, 0.22, 'highpass', 1800); },
+    candleOn() { if (ctx) hiss(now(), 0.25, 0.06, 'bandpass', 900, 1.5); },
+    whisper() {
+      if (!ctx) return; const t = now();
+      const f = hiss(t, 2, 0.14, 'bandpass', 1300, 5, 0.7);
+      f.frequency.setValueAtTime(1300, t); f.frequency.linearRampToValueAtTime(3200, t + 1.8);
+    },
+    win() { if (!ctx) return; const t = now(); [440, 523.25, 659.25, 880].forEach((f, i) => bell(f, t + i * 0.18, 0.15)); },
+    lose() {
+      if (!ctx) return; const t = now();
+      const lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      lp.type = 'lowpass'; lp.frequency.value = 320;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 4.5);
+      lp.connect(g); g.connect(master); g.connect(rev);
+      [55, 58.27, 61.74, 65.41].forEach(f => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(t); o.stop(t + 4.6); });
+      bell(220, t + 0.2, 0.2); bell(207.65, t + 1, 0.2); bell(196, t + 1.8, 0.2);
+    },
+    ignite() {
+      if (!ctx) return; const t = now();
+      const f = hiss(t, 1.4, 0.4, 'bandpass', 300, 0.7, 0.25);
+      f.frequency.setValueAtTime(250, t); f.frequency.exponentialRampToValueAtTime(2800, t + 0.9);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(40, t + 1); env(g, t, 0.5, 0.05, 1.3);
+      o.connect(g); g.connect(master); g.connect(rev); o.start(t); o.stop(t + 1.4);
+      [440, 523.25, 659.25, 880].forEach((fr, i) => bell(fr, t + 0.5 + i * 0.16, 0.12));
+    },
+    crackle() { if (ctx) hiss(now(), 0.04 + Math.random() * 0.05, 0.04 + Math.random() * 0.08, 'highpass', 2500 + Math.random() * 4000, 1, 0.003); },
+    gameOver() {
+      if (!ctx) return; const t = now();
+      // golpe + chapoteo
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(30, t + 1.2); env(g, t, 0.8, 0.01, 1.6);
+      o.connect(g); g.connect(master); g.connect(rev); o.start(t); o.stop(t + 1.7);
+      const f = hiss(t, 1.2, 0.35, 'lowpass', 1500);
+      f.frequency.setValueAtTime(1500, t); f.frequency.exponentialRampToValueAtTime(120, t + 1);
+      // latidos
+      for (let i = 0; i < 4; i++) {
+        const b = t + 1.4 + i * 0.9;
+        [0, 0.22].forEach((d, j) => {
+          const h = ctx.createOscillator(), hg = ctx.createGain();
+          h.frequency.setValueAtTime(70, b + d); h.frequency.exponentialRampToValueAtTime(40, b + d + 0.15);
+          env(hg, b + d, j ? 0.35 : 0.5, 0.01, 0.25);
+          h.connect(hg).connect(master); h.start(b + d); h.stop(b + d + 0.3);
+        });
+      }
+    },
+  };
+})();
+
+/* ============================================================ Board */
+const boardEl = $('#board'), planEl = $('#planchette'), pbody = $('#pbody');
+const pos = {};
+function glyph(txt, x, y, r = 0, cls = '', key = null) {
+  const el = document.createElement('div');
+  el.className = 'glyph ' + cls; el.textContent = txt;
+  el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.setProperty('--r', r + 'deg');
+  boardEl.insertBefore(el, planEl);
+  if (key) pos[key] = { x, y, el };
+}
+(function buildBoard() {
+  glyph('OUIJA', 500, 95, 0, 'title');
+  glyph('✶', 318, 95, 0, 'orn'); glyph('✶', 682, 95, 0, 'orn');
+  glyph('YES', 150, 85, -6, 'word', 'YES'); glyph('NO', 850, 85, 6, 'word', 'NO');
+  glyph('☀︎', 150, 160, 0, 'orn'); glyph('☾︎', 850, 160, 0, 'orn');
+  const arc = (letters, x0, x1, base, amp) => [...letters].forEach((ch, i) => {
+    const t = i / (letters.length - 1), x = x0 + (x1 - x0) * t, y = base - amp * Math.sin(Math.PI * t);
+    const r = Math.atan2(-amp * Math.PI * Math.cos(Math.PI * t), x1 - x0) * 180 / Math.PI;
+    glyph(ch, x, y, r, '', ch);
+  });
+  arc('ABCDEFGHIJKLM', 110, 890, 255, 70);
+  arc('NOPQRSTUVWXYZ', 120, 880, 365, 55);
+  [...'1234567890'].forEach((ch, i) => glyph(ch, 230 + i * 60, 455, 0, 'num', ch));
+  glyph('GOOD BYE', 500, 545, 0, 'word', 'GOODBYE');
+  glyph('☠︎', 95, 530, -8, 'orn'); glyph('☠︎', 905, 530, 8, 'orn');
+})();
+
+/* ============================================================ Planchette */
+const pl = { x: 500, y: 300, r: 0 };
+let busy = false, skipping = false, idle = 1;
+(function frame(t) {
+  idle += ((busy ? 0 : 1) - idle) * 0.05;
+  const ox = Math.sin(t / 1400) * 3 * idle, oy = Math.cos(t / 1700) * 3 * idle, or = Math.sin(t / 2100) * 2 * idle;
+  planEl.style.transform = `translate(${pl.x - 75 + ox}px, ${pl.y - 82 + oy}px) rotate(${pl.r + or}deg)`;
+  requestAnimationFrame(frame);
+})(0);
+
+const pause = ms => new Promise(r => setTimeout(r, skipping ? 0 : ms));
+
+function moveTo(tx, ty, fast = false) {
+  return new Promise(res => {
+    const sx = pl.x, sy = pl.y, dx = tx - sx, dy = ty - sy, dist = Math.hypot(dx, dy) || 1;
+    const dur = skipping ? 1 : Math.max(fast ? 380 : 750, dist / (fast ? 0.9 : 0.42));
+    const nx = -dy / dist, ny = dx / dist, bend = (Math.random() * 2 - 1) * Math.min(120, dist * 0.35);
+    const cx = sx + dx / 2 + nx * bend, cy = sy + dy / 2 + ny * bend;
+    const r0 = pl.r, r1 = (Math.random() * 2 - 1) * 10, seed = Math.random() * 100, t0 = performance.now();
+    let lx = sx, ly = sy, lt = t0;
+    function step(now) {
+      const t = skipping ? 1 : Math.min(1, (now - t0) / dur);
+      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, u = 1 - e;
+      const wob = Math.sin(Math.PI * t), k = (now - t0) / 1000;
+      pl.x = u * u * sx + 2 * u * e * cx + e * e * tx + wob * (Math.sin(k * 13 + seed) * 3 + Math.sin(k * 29 + seed * 2) * 1.5);
+      pl.y = u * u * sy + 2 * u * e * cy + e * e * ty + wob * (Math.cos(k * 11 + seed) * 3 + Math.sin(k * 23 + seed) * 1.5);
+      pl.r = r0 + (r1 - r0) * e + wob * Math.sin(k * 7 + seed) * 3;
+      audio.scrape(Math.hypot(pl.x - lx, pl.y - ly) / Math.max(1, now - lt));
+      lx = pl.x; ly = pl.y; lt = now;
+      if (t < 1) requestAnimationFrame(step); else { audio.scrape(0); res(); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+function hover(x, y) {
+  if (skipping) return Promise.resolve();
+  return new Promise(res => {
+    const t0 = performance.now(), dur = 700, R = 11;
+    function step(now) {
+      const t = Math.min(1, (now - t0) / dur), a = t * Math.PI * 2, s = Math.sin(Math.PI * t);
+      pl.x = x + Math.sin(a) * R * s; pl.y = y + Math.sin(2 * a) * R * 0.5 * s;
+      if (t < 1 && !skipping) requestAnimationFrame(step); else { pl.x = x; pl.y = y; res(); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+const goTo = async (key, fast) => { const p = pos[key]; await moveTo(p.x, p.y, fast); await hover(p.x, p.y); flash(p.el); };
+function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+function shake() { pbody.classList.remove('shake'); void pbody.offsetWidth; pbody.classList.add('shake'); }
+
+/* ============================================================ Candles */
+function buildCandles() {
+  const box = $('#candles'); box.innerHTML = '';
+  const n = S.total, L = Math.ceil(n / 2), R = n - L, els = [];
+  const col = (count, x, side) => {
+    for (let i = 0; i < count; i++) {
+      const y = count === 1 ? 300 : 90 + i * (430 / (count - 1));
+      const c = document.createElement('div');
+      c.className = 'candle out';
+      c.style.left = x + 'px'; c.style.top = y + 'px';
+      c.style.setProperty('--h', (78 + ((i * 37 + side * 19) % 40)) + 'px');
+      c.style.setProperty('--d', (-Math.random() * 2).toFixed(2) + 's');
+      c.innerHTML = '<div class="glow"></div><div class="wax"></div><div class="wick"></div><div class="flame"></div>';
+      box.appendChild(c); (els[side] = els[side] || []).push(c);
+    }
+  };
+  col(L, 30, 0); col(R, 1180, 1);
+  // orden en que se apagan: alterna izquierda / derecha
+  const order = [];
+  for (let i = 0; i < L; i++) { order.push(els[0][i]); if (els[1] && els[1][i]) order.push(els[1][i]); }
+  order.forEach((c, i) => { c.dataset.o = i; setTimeout(() => { c.classList.remove('out'); audio.candleOn(); }, 300 + i * 160); });
+}
+function extinguish() {
+  const lit = [...document.querySelectorAll('.candle:not(.out)')].sort((a, b) => a.dataset.o - b.dataset.o);
+  if (!lit.length) return;
+  const c = lit[0];
+  c.classList.add('out'); audio.candleOut();
+  const h = parseFloat(c.style.getPropertyValue('--h'));
+  for (let i = 0; i < 5; i++) {
+    const s = document.createElement('div');
+    s.className = 'smoke';
+    s.style.bottom = (h + 14) + 'px';
+    s.style.setProperty('--sx', ((Math.random() * 2 - 1) * 30) + 'px');
+    s.style.animationDelay = (i * 0.18) + 's';
+    c.appendChild(s); setTimeout(() => s.remove(), 3500);
+  }
+  S.lit = Math.max(0, S.lit - 1);
+  setDark((1 - S.lit / S.total) * 0.7);
+  renderPanel();
+}
+const setDark = v => document.documentElement.style.setProperty('--dark', v);
+
+/* ============================================================ UI */
+let msgTok = 0;
+function msg(text) {
+  const el = $('#msg'), tok = ++msgTok;
+  el.classList.remove('show');
+  setTimeout(() => { if (tok !== msgTok) return; el.textContent = text; el.classList.add('show'); }, 200);
+}
+let letters = new WeakMap();
+function buildTiles() {
+  const w = $('#word'); w.innerHTML = ''; letters = new WeakMap();
+  const groups = S.entry.t.toUpperCase().split(' ');
+  const n = S.entry.t.replace(/ /g, '').length;
+  const tw = Math.max(30, Math.min(56, 1100 / (n + (groups.length - 1) * 0.9) - 10));
+  w.style.setProperty('--tw', tw + 'px');
+  groups.forEach(gr => {
+    const ge = document.createElement('div'); ge.className = 'wgroup';
+    [...gr].forEach(c => {
+      const t = document.createElement('div'), k = norm(c);
+      t.className = 'tile';
+      if (isKey(k)) { t.dataset.k = k; t.textContent = ' '; letters.set(t, c); }
+      else { t.textContent = c; t.classList.add('punct', 'on'); }
+      ge.appendChild(t);
+    });
+    w.appendChild(ge);
+  });
+}
+function reveal(k, cls = 'on') {
+  document.querySelectorAll(`.tile[data-k="${k}"]`).forEach((t, i) => setTimeout(() => { t.textContent = letters.get(t); t.classList.add(cls); }, i * 140));
+}
+function renderScore() {
+  $('#teams').innerHTML = S.teams.map((t, i) =>
+    `<div class="chip ${i ? 'host' : 'them'}"><span>${esc(t.name)}</span><b>${t.pts}</b></div>`).join('');
+}
+
+/* ============================================================ Game */
+async function run(fn) {
+  if (busy) return;
+  busy = true; renderPanel();
+  try { await fn(); } catch (e) { console.error(e); }
+  finally {
+    busy = false; skipping = false; renderPanel();
+    if (pendingKey) { const k = pendingKey; pendingKey = null; setTimeout(() => guess(k), 250); }
+  }
+}
+let pendingKey = null;
+
+function loadWord(entry) {
+  if (busy) return;
+  hideFx(); pendingKey = null;
+  S.entry = entry;
+  S.keys = new Set([...norm(entry.t)].filter(isKey));
+  S.used = new Set(); S.hits = new Set();
+  S.total = S.settings.candles; S.lit = S.total;
+  S.status = 'playing'; S.hintShown = false; S.round++;
+  S.usedIds.add(entry.id); save();
+  Object.values(pos).forEach(p => p.el.classList.remove('hit', 'miss'));
+  $('#round').textContent = 'Ronda ' + S.round;
+  buildTiles();
+  $('#hint').classList.remove('show');
+  setDark(0);
+  buildCandles(); renderScore();
+  msg('El espíritu espera… digan una letra');
+  run(() => moveTo(500, 300));
+}
+
+function nextWord() {
+  if (busy) return;
+  const cats = FILTERS[S.settings.filter].cats;
+  const pool = WORDS.filter(w => cats.includes(w.c) && !S.usedIds.has(w.id));
+  if (!pool.length) {
+    if (panel && !panel.closed) panel.alert('Ya no quedan palabras sin usar en este filtro. Cambia el filtro o reinicia la partida.');
+    else msg('El espíritu ya no tiene más palabras…');
+    return;
+  }
+  loadWord(pool[Math.floor(Math.random() * pool.length)]);
+}
+
+function guess(k) {
+  if (S.status !== 'playing' || !pos[k]) return;
+  if (busy) { pendingKey = k; return; }
+  if (S.used.has(k)) { msg(`La ${k} ya fue consultada…`); shake(); return; }
+  run(async () => {
+    msg('Consultando al espíritu…');
+    await goTo(k);
+    S.used.add(k);
+    if (S.keys.has(k)) {
+      S.hits.add(k); pos[k].el.classList.add('hit');
+      await pause(250);
+      await goTo('YES');
+      audio.chime(); reveal(k);
+      const n = [...norm(S.entry.t)].filter(c => c === k).length;
+      msg(n > 1 ? `Sí… la ${k} aparece ${n} veces` : `Sí… la ${k} está`);
+      if ([...S.keys].every(c => S.hits.has(c))) { await pause(900); await winSeq(); }
+    } else {
+      pos[k].el.classList.add('miss');
+      await pause(200);
+      await goTo('NO');
+      audio.wrong(); await pause(150); extinguish();
+      const lines = ['El espíritu niega… una vela se apaga', 'No… la oscuridad avanza', 'Te equivocaste, mortal', 'Nooo… algo se acerca'];
+      msg(S.lit === 1 ? 'Queda una sola vela…' : lines[Math.floor(Math.random() * lines.length)]);
+      if (S.lit === 0) { await pause(700); await loseSeq(); }
+    }
+  });
+}
+
+function spirit(yes) {
+  if (S.status !== 'playing' || busy) return;
+  if (S.lit <= 1) { msg('El espíritu no responde cuando queda una sola vela…'); return; }
+  run(async () => {
+    msg('El espíritu escucha la pregunta…');
+    audio.whisper(); await pause(900);
+    extinguish(); await pause(500);
+    await goTo(yes ? 'YES' : 'NO');
+    yes ? audio.chime() : audio.wrong();
+    msg(yes ? 'El espíritu responde… SÍ' : 'El espíritu responde… NO');
+  });
+}
+
+function giveHint() {
+  if (S.status !== 'playing' || busy) return;
+  if (S.hintShown) { msg('El espíritu ya dio su pista…'); return; }
+  if (S.lit <= 1) { msg('El espíritu no responde cuando queda una sola vela…'); return; }
+  run(async () => {
+    msg('El espíritu susurra…');
+    audio.whisper(); await pause(700);
+    extinguish(); await pause(400);
+    const h = $('#hint'); h.textContent = '☾ ' + S.entry.h + ' ☽'; h.classList.add('show');
+    S.hintShown = true;
+    msg('Una vela a cambio de un secreto');
+  });
+}
+
+function giveUp() {
+  if (S.status !== 'playing' || busy) return;
+  run(async () => {
+    while (S.lit > 0) { extinguish(); await pause(220); }
+    await loseSeq();
+  });
+}
+
+async function winSeq() {
+  S.status = 'won';
+  S.teams[0].pts++;
+  audio.win();
+  document.querySelectorAll('.tile').forEach((t, i) => setTimeout(() => t.classList.add('win'), i * 60));
+  document.querySelectorAll('.candle:not(.out)').forEach(c => c.classList.add('flare'));
+  msg('¡Liberaron al espíritu! +1 punto para La Calabaza');
+  renderScore(); save();
+  await pause(1000);
+  await goTo('GOODBYE');
+  showWin();
+  endRound();
+}
+
+async function loseSeq() {
+  S.status = 'lost'; renderPanel();
+  audio.lose(); setDark(1);
+  msg('Las velas se apagaron… el espíritu deletrea la respuesta');
+  await pause(1400);
+  const seen = new Set();
+  for (const c of norm(S.entry.t)) {
+    if (!S.keys.has(c) || S.hits.has(c) || seen.has(c)) continue;
+    seen.add(c);
+    const p = pos[c];
+    await moveTo(p.x, p.y, true); flash(p.el); reveal(c, 'lost');
+    await pause(260);
+  }
+  await pause(400);
+  await goTo('GOODBYE');
+  S.teams[1].pts++; renderScore();
+  msg(`Era «${S.entry.t}»… +1 punto para el Fantasma`);
+  showGameOver();
+  endRound();
+}
+
+/* Clips opcionales: pon ganar.mp3 y/o perder.mp3 junto a este archivo (máx. 10 s). */
+const clips = { win: null, lose: null };
+let curClip = null, clipTimers = [], fxTok = 0;
+function findClip(name) {
+  const exts = ['mp3', 'm4a', 'wav', 'ogg'];
+  return new Promise(res => {
+    let i = 0;
+    const next = () => {
+      if (i >= exts.length) return res(null);
+      const a = new Audio(), src = `${name}.${exts[i++]}`;
+      a.preload = 'auto';
+      a.oncanplaythrough = () => { a.oncanplaythrough = a.onerror = null; a.dataset.file = src; res(a); };
+      a.onerror = next;
+      a.src = src; a.load();
+    };
+    next();
+  });
+}
+findClip('ganar').then(a => { clips.win = a; renderPanel(); });
+findClip('perder').then(a => { clips.lose = a; renderPanel(); });
+function playClip(a) {
+  stopClip();
+  if (!a) return false;
+  const vol = S.settings.sound ? S.settings.vol / 100 : 0;
+  a.currentTime = 0; a.volume = vol; a.play().catch(() => {});
+  curClip = a;
+  if (a.duration && a.duration <= 11) return true;
+  clipTimers.push(setTimeout(() => {
+    let k = 10;
+    const iv = setInterval(() => { if (curClip !== a || --k <= 0) return clearInterval(iv); a.volume = vol * k / 10; }, 100);
+    clipTimers.push(iv);
+  }, 9000));
+  clipTimers.push(setTimeout(stopClip, 10000));
+  return true;
+}
+function stopClip() {
+  clipTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); clipTimers = [];
+  if (curClip) { curClip.pause(); curClip = null; }
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const restart = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+
+/* Ganar: calabaza en llamas (todo dibujado en canvas) */
+const fire = (() => {
+  let cv, g, W, H, dpr, raf = null, t0 = 0, trees = null, sprites = null, flames = [], sparks = [], smoke = [], ignited = false, quiet = false;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const clamp = v => Math.max(0, Math.min(1, v));
+  const outBack = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  function sprite(r, stops) {
+    const c = document.createElement('canvas'); c.width = c.height = r * 2;
+    const x = c.getContext('2d'), gr = x.createRadialGradient(r, r, 0, r, r, r);
+    stops.forEach(([o, col]) => gr.addColorStop(o, col));
+    x.fillStyle = gr; x.fillRect(0, 0, r * 2, r * 2);
+    return c;
+  }
+  function makeSprites() {
+    sprites = {
+      hot: sprite(64, [[0, 'rgba(255,255,235,1)'], [0.3, 'rgba(255,232,150,.8)'], [1, 'rgba(255,160,40,0)']]),
+      warm: sprite(64, [[0, 'rgba(255,200,80,.9)'], [0.4, 'rgba(255,120,20,.5)'], [1, 'rgba(200,40,0,0)']]),
+      green: sprite(128, [[0, 'rgba(150,220,110,.5)'], [0.5, 'rgba(100,170,70,.22)'], [1, 'rgba(60,120,40,0)']]),
+      orange: sprite(128, [[0, 'rgba(235,150,80,.45)'], [0.5, 'rgba(180,90,40,.2)'], [1, 'rgba(120,50,20,0)']]),
+    };
+  }
+  function makeTrees() {
+    const c = document.createElement('canvas'); c.width = W * dpr; c.height = H * dpr;
+    const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.strokeStyle = '#020402'; x.lineCap = 'round';
+    const s = Math.min(W, H) / 900;
+    const branch = (px, py, len, ang, w, depth) => {
+      if (!depth || w < 0.5) return;
+      const qx = px + Math.cos(ang) * len, qy = py + Math.sin(ang) * len;
+      x.lineWidth = w; x.beginPath(); x.moveTo(px, py);
+      x.quadraticCurveTo((px + qx) / 2 + rnd(-.15, .15) * len, (py + qy) / 2 + rnd(-.15, .15) * len, qx, qy); x.stroke();
+      const n = Math.random() < 0.45 ? 3 : 2;
+      for (let i = 0; i < n; i++) branch(qx, qy, len * rnd(.6, .8), ang + rnd(-.65, .65), w * .66, depth - 1);
+    };
+    [[.04, -1.35], [.14, -1.5], [.24, -1.25], [.78, -1.85], [.88, -1.65], [.97, -1.8]].forEach(([fx, a]) =>
+      branch(W * fx, H * 1.02, H * rnd(.24, .32), a, 26 * s, 9));
+    return c;
+  }
+  function resize() {
+    dpr = Math.min(1.25, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    trees = makeTrees();
+  }
+  function lobe(cx, cy, ox, w, R) {
+    const gr = g.createRadialGradient(cx + ox * R * 0.8, cy - R * 0.25, R * 0.05, cx + ox * R, cy, R * 0.95);
+    gr.addColorStop(0, '#a5480e'); gr.addColorStop(0.6, '#5e2205'); gr.addColorStop(1, '#220a01');
+    g.fillStyle = gr; g.strokeStyle = 'rgba(15,4,0,.7)'; g.lineWidth = R * 0.018;
+    g.beginPath(); g.ellipse(cx + ox * R, cy, w * R, R * 0.82, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
+  function facePath(cx, cy, R) {
+    const P = (x, y) => [cx + x * R, cy + y * R], p = new Path2D();
+    const poly = pts => { pts.forEach(([x, y], i) => i ? p.lineTo(...P(x, y)) : p.moveTo(...P(x, y))); p.closePath(); };
+    poly([[-.6, -.26], [-.1, -.02], [-.4, .15]]);   // ojo izq.
+    poly([[.6, -.26], [.1, -.02], [.4, .15]]);      // ojo der.
+    poly([[0, .05], [.1, .25], [-.1, .25]]);        // nariz
+    // boca: borde superior con 2 colmillos hacia abajo, inferior con 3 dientes hacia arriba
+    const up = x => .16 + .2 * (1 - (x / .68) ** 2), lo = x => .16 + .64 * (1 - (x / .68) ** 2);
+    const edge = (f, from, to, teeth, dir) => {
+      const pts = [], step = (to - from) / 40;
+      for (let i = 0; i <= 40; i++) {
+        const x = from + step * i;
+        const tooth = teeth.find(c => Math.abs(x - c) < .075);
+        if (tooth !== undefined && Math.abs(x - tooth) < Math.abs(step) / 2) pts.push([tooth, f(tooth) + dir * .17]);
+        else if (tooth === undefined) pts.push([x, f(x)]);
+        else if (Math.abs(x - tooth) > .06) pts.push([x, f(x)]);
+      }
+      return pts;
+    };
+    poly([...edge(up, -.68, .68, [-.22, .22], 1), ...edge(lo, .68, -.68, [-.42, 0, .42], -1)]);
+    return p;
+  }
+  function drawSmoke(list) {
+    list.forEach(s => {
+      s.x += s.vx; s.r += 0.08; if (s.x < -s.r) s.x = W + s.r; if (s.x > W + s.r) s.x = -s.r;
+      g.globalAlpha = s.a; g.drawImage(s.orange ? sprites.orange : sprites.green, s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
+    });
+    g.globalAlpha = 1;
+  }
+  function frame(now) {
+    const t = now - t0, s = Math.min(W, H) / 900, R = Math.min(W, H) * 0.24;
+    // fondo
+    const bg = g.createRadialGradient(W / 2, H * .45, 0, W / 2, H * .45, Math.max(W, H) * .75);
+    bg.addColorStop(0, '#2c4a1c'); bg.addColorStop(.45, '#0f1a0a'); bg.addColorStop(1, '#020301');
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.drawImage(trees, 0, 0, W, H);
+    drawSmoke(smoke.filter(p => !p.front));
+    // calabaza
+    const e = outBack(clamp((t - 200) / 1100)), cx = W / 2, cy = H * .5 + (1 - e) * H * .55;
+    const glow = clamp((t - 1300) / 450) * (0.86 + 0.14 * Math.sin(t / 47) * Math.sin(t / 83));
+    if (!ignited && t > 1300) { ignited = true; if (!quiet) audio.ignite(); }
+    g.save(); g.translate(cx, cy); g.scale(.7 + .3 * e, .7 + .3 * e); g.translate(-cx, -cy);
+    if (glow > 0) { g.globalAlpha = glow * .6; g.drawImage(sprites.warm, cx - R * 2.2, cy - R * 2, R * 4.4, R * 4.4); g.globalAlpha = 1; }
+    [[-.62, .55], [.62, .55], [-.32, .74], [.32, .74], [0, .8]].forEach(([ox, w]) => lobe(cx, cy, ox, w, R));
+    g.fillStyle = '#3b2a12'; g.beginPath();
+    g.moveTo(cx - R * .08, cy - R * .74); g.quadraticCurveTo(cx - R * .1, cy - R * 1.02, cx + R * .06, cy - R * 1.12);
+    g.lineTo(cx + R * .12, cy - R * 1.05); g.quadraticCurveTo(cx + R * .04, cy - R * .98, cx + R * .08, cy - R * .74); g.fill();
+    const face = facePath(cx, cy, R);
+    g.fillStyle = '#120500'; g.fill(face);
+    if (glow > 0) {
+      const fg = g.createRadialGradient(cx, cy + R * .2, R * .05, cx, cy + R * .2, R * .9);
+      fg.addColorStop(0, '#fffbe2'); fg.addColorStop(.4, '#ffd54e'); fg.addColorStop(1, '#ff8410');
+      g.globalAlpha = glow; g.shadowColor = '#ffb030'; g.shadowBlur = 70 * s; g.fillStyle = fg; g.fill(face);
+      g.shadowBlur = 0; g.globalCompositeOperation = 'lighter'; g.globalAlpha = glow * .35;
+      g.drawImage(sprites.warm, cx - R * 1.1, cy - R * .9, R * 2.2, R * 2.2);
+      g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+    }
+    g.restore();
+    drawSmoke(smoke.filter(p => p.front));
+    // llamas y chispas
+    const rate = clamp((t - 1450) / 600);
+    for (let i = 0; i < 16 * rate; i++) {
+      const fromFace = Math.random() < .18;
+      flames.push({
+        x: cx + (fromFace ? (Math.random() < .5 ? -1 : 1) * R * rnd(.25, .4) : rnd(-.7, .7) * R),
+        y: fromFace ? cy - R * .02 : cy - R * rnd(.45, .75),
+        vx: rnd(-.3, .3) * s, vy: -rnd(3, 6.5) * s, life: 1, d: rnd(.016, .03), size: R * rnd(.13, .3), seed: Math.random() * 9,
+      });
+    }
+    for (let i = 0; i < 4 * rate; i++) {
+      sparks.push({ x: cx + rnd(-.8, .8) * R, y: cy - R * rnd(.3, .9), vx: rnd(-1.5, 1.5) * s, vy: -rnd(4, 9) * s, life: 1, d: rnd(.006, .014), hue: rnd(35, 95) });
+    }
+    g.globalCompositeOperation = 'lighter';
+    flames = flames.filter(p => (p.life -= p.d) > 0);
+    flames.forEach(p => {
+      p.x += p.vx + Math.sin(t / 160 + p.seed) * .7 * s; p.y += p.vy; p.vy *= .995;
+      const sz = p.size * (.3 + p.life * .9);
+      g.globalAlpha = p.life * (p.life > .7 ? .22 : .32);
+      g.drawImage(p.life > .7 ? sprites.hot : sprites.warm, p.x - sz / 2, p.y - sz, sz, sz * 2);
+    });
+    sparks = sparks.filter(p => (p.life -= p.d) > 0 && p.y > -20);
+    g.lineWidth = 1.6 * s;
+    sparks.forEach(p => {
+      p.vx += Math.sin(t / 200 + p.hue) * .05; p.x += p.vx; p.y += p.vy; p.vy *= .99;
+      g.globalAlpha = p.life; g.strokeStyle = `hsl(${p.hue},100%,65%)`;
+      g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - p.vx * 2.5, p.y - p.vy * 2.5); g.stroke();
+    });
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+    if (!quiet && rate > 0 && Math.random() < .12) audio.crackle();
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start(withClip) {
+      if (!cv) { cv = $('#firecv'); g = cv.getContext('2d'); makeSprites(); addEventListener('resize', () => cv && raf && resize()); }
+      this.stop(); resize();
+      quiet = withClip; ignited = false; flames = []; sparks = [];
+      smoke = Array.from({ length: 34 }, (_, i) => ({
+        x: rnd(0, W), y: H * rnd(.7, 1.05), r: H * rnd(.18, .38), vx: rnd(-.35, .35),
+        a: rnd(.35, .8), orange: Math.random() < .3, front: i % 2 === 0,
+      }));
+      t0 = performance.now(); raf = requestAnimationFrame(frame);
+    },
+    stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
+  };
+})();
+
+function showWin() {
+  hideFx();
+  const fx = $('#winfx');
+  $('#win-name').textContent = '¡' + S.teams[0].name.replace(/^equipo:?\s*/i, '').toUpperCase() + '!';
+  restart(fx, 'on');
+  fire.start(playClip(clips.win));
+}
+
+function showGameOver() {
+  hideFx();
+  const go = $('#gameover'), blood = go.querySelector('.blood');
+  blood.innerHTML = '<div class="band"></div>';
+  const n = Math.round(innerWidth / 38);
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div'), w = 14 + Math.random() * 34;
+    d.className = 'drip';
+    d.style.left = (i / n * 100 + Math.random() * 2) + '%';
+    d.style.setProperty('--w', w + 'px');
+    d.style.setProperty('--len', (12 + Math.pow(Math.random(), 1.6) * 80) + 'vh');
+    d.style.setProperty('--dur', (2.2 + Math.random() * 3.5) + 's');
+    d.style.setProperty('--del', (Math.random() * 0.8) + 's');
+    blood.appendChild(d);
+  }
+  // salpicaduras, lejos del texto central
+  for (let i = 0; i < 9; i++) {
+    let x, y;
+    do { x = Math.random() * 100; y = 15 + Math.random() * 80; } while (x > 22 && x < 78 && y > 30 && y < 70);
+    const size = 30 + Math.random() * 90, del = 0.1 + Math.random() * 0.6;
+    [[0, 0, 1], [0.7, -0.4, 0.2], [-0.6, 0.6, 0.15], [0.3, 0.9, 0.12]].forEach(([dx, dy, k]) => {
+      const sp = document.createElement('div');
+      sp.className = 'splat';
+      sp.style.left = `calc(${x}% + ${dx * size}px)`; sp.style.top = `calc(${y}% + ${dy * size}px)`;
+      sp.style.setProperty('--s', (size * k) + 'px');
+      sp.style.setProperty('--del', (del + (k < 1 ? 0.05 : 0)) + 's');
+      blood.appendChild(sp);
+    });
+  }
+  $('#go-answer').textContent = S.entry ? `Era «${S.entry.t}»` : '';
+  restart(go, 'on');
+  if (!playClip(clips.lose)) audio.gameOver();
+}
+function hideFx() {
+  fxTok++; stopClip(); fire.stop();
+  $('#gameover').classList.remove('on');
+  $('#winfx').classList.remove('on', 'reveal');
+}
+
+function endRound() {
+  save(); renderScore(); renderPanel();
+}
+
+/* ============================================================ Teclado */
+function onKey(e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape') { if (busy) skipping = true; else hideFx(); return; }
+  if (e.shiftKey && e.key.length === 1) {
+    const k = e.key.toUpperCase();
+    const fn = { H: openPanel, S: () => spirit(true), N: () => spirit(false), P: giveHint }[k];
+    if (fn) { e.preventDefault(); fn(); }
+    return;
+  }
+  if (e.key === 'Enter') { if (S.status !== 'playing') nextWord(); return; }
+  if (e.key.length !== 1) return;
+  const k = norm(e.key);
+  if (isKey(k)) { e.preventDefault(); guess(k); }
+}
+document.addEventListener('keydown', onKey);
+
+/* ============================================================ Panel del anfitrión (ventana aparte) */
+let panel = null;
+const PANEL_HTML = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Panel del anfitrión · Ouija</title>
+<style>
+body{margin:0;padding:14px 16px 30px;font:14px/1.45 system-ui,-apple-system,sans-serif;background:#140808;color:#f1e2c6}
+h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#c99a5b;margin:18px 0 8px}
+.card{background:#1d0c0a;border:1px solid #3a1a14;border-radius:10px;padding:12px}
+.answer{font-size:30px;font-weight:800;letter-spacing:.03em;color:#ffd79a}
+.muted{color:#a88e70}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:#2c1410;color:#f1e2c6;border:1px solid #5a2c20;border-radius:8px;padding:8px 11px;font:inherit;cursor:pointer}
+button:hover{background:#3d1b14} button.primary{background:#8a2a12;border-color:#b2401f}
+button:disabled{opacity:.35;cursor:default}
+input,select{background:#1d0c0a;color:#f1e2c6;border:1px solid #5a2c20;border-radius:6px;padding:6px;font:inherit}
+.team{display:grid;grid-template-columns:1fr 36px auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.team b{text-align:center;font-size:18px;color:#ffd79a}
+.words{columns:2;column-gap:16px;font-size:13px}
+.w{display:block;cursor:pointer;padding:2px 6px;border-radius:4px}
+.w:hover{background:#3a1a14} .w.used{opacity:.4;text-decoration:line-through} .w.cur{background:#8a2a12;opacity:1;text-decoration:none}
+kbd{background:#2c1410;border:1px solid #5a2c20;border-radius:4px;padding:0 5px;font-size:12px}
+.keys div{margin:3px 0}
+</style></head><body>
+<div class="card"><div class="muted" id="p-cat"></div><div class="answer" id="p-answer">—</div><div class="muted" id="p-hint"></div><div id="p-status" style="margin-top:8px"></div></div>
+<h2>Ronda</h2>
+<div class="row"><button class="primary" data-act="next">Siguiente palabra ▶</button><button data-act="reveal">Revelar respuesta</button>
+<select id="p-filter">${Object.entries(FILTERS).map(([k, f]) => `<option value="${k}">${f.label}</option>`).join('')}</select></div>
+<h2>El espíritu responde · cuesta 1 vela</h2>
+<div class="row"><button data-act="yes">SÍ</button><button data-act="no">NO</button><button data-act="hint">Dar pista</button></div>
+<h2>Marcador · si adivinan +1 para ellos, si pierden +1 para ti</h2>
+<div id="p-teams"></div>
+<h2>Animaciones y clips de audio</h2>
+<div class="row"><button data-act="testwin">Probar ganar</button><button data-act="testlose">Probar perder</button><button data-act="hidefx">Quitar animación</button></div>
+<div class="muted" id="p-clips" style="margin-top:6px"></div>
+<h2>Ajustes</h2>
+<div class="row"><label>Velas <input type="number" id="p-candles" min="3" max="8" style="width:56px"></label><span class="muted">(desde la siguiente ronda)</span></div>
+<div class="row" style="margin-top:8px"><label><input type="checkbox" id="p-sound"> Sonido</label><input type="range" id="p-vol" min="0" max="100"><button data-act="reset">Reiniciar partida</button></div>
+<h2>Palabras · clic para jugar una en específico</h2>
+<div id="p-words" class="words"></div>
+<h2>Atajos · funcionan en esta ventana y en la del juego</h2>
+<div class="keys muted">
+<div><kbd>A</kbd>–<kbd>Z</kbd> <kbd>0</kbd>–<kbd>9</kbd> letra o número que diga el equipo</div>
+<div><kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>Shift</kbd>+<kbd>N</kbd> el espíritu responde SÍ / NO</div>
+<div><kbd>Shift</kbd>+<kbd>P</kbd> dar pista</div>
+<div><kbd>Enter</kbd> siguiente palabra (cuando termina la ronda)</div>
+<div><kbd>Esc</kbd> acelerar la animación</div>
+<div><kbd>Shift</kbd>+<kbd>H</kbd> abrir este panel</div>
+</div></body></html>`;
+
+function openPanel() {
+  if (panel && !panel.closed) { panel.focus(); return; }
+  panel = window.open('', 'ouija-host', 'width=540,height=860');
+  if (!panel) { msg('Permite ventanas emergentes para abrir el panel'); return; }
+  panel.document.open(); panel.document.write(PANEL_HTML); panel.document.close();
+  const d = panel.document;
+  d.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (b && !b.disabled) act(b.dataset.act, b.dataset);
+  });
+  d.addEventListener('input', e => {
+    const t = e.target;
+    if (t.classList.contains('tname')) { S.teams[+t.dataset.name].name = t.value; save(); renderScore(); }
+    else if (t.id === 'p-vol') { S.settings.vol = +t.value; audio.setVol(); save(); }
+  });
+  d.addEventListener('change', e => {
+    const t = e.target;
+    if (t.id === 'p-filter') S.settings.filter = t.value;
+    else if (t.id === 'p-candles') S.settings.candles = Math.max(3, Math.min(8, +t.value || 6));
+    else if (t.id === 'p-sound') { S.settings.sound = t.checked; audio.setVol(); }
+    else return;
+    save(); renderScore(); renderPanel();
+  });
+  d.addEventListener('keydown', e => {
+    const t = e.target;
+    if (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'range'].includes(t.type))) return;
+    onKey(e);
+  });
+  renderPanel();
+}
+
+function act(a, ds) {
+  const i = +ds.i;
+  switch (a) {
+    case 'next':
+      if (S.status === 'playing' && S.used.size && !panel.confirm('¿Saltar la palabra actual?')) return;
+      nextWord(); return;
+    case 'reveal': if (panel.confirm('¿Apagar las velas y revelar la respuesta?')) giveUp(); return;
+    case 'yes': spirit(true); return;
+    case 'no': spirit(false); return;
+    case 'hint': giveHint(); return;
+    case 'plus': S.teams[i].pts++; break;
+    case 'minus': S.teams[i].pts--; break;
+    case 'testwin': showWin(); return;
+    case 'testlose': showGameOver(); return;
+    case 'hidefx': hideFx(); return;
+    case 'reset':
+      if (!panel.confirm('¿Reiniciar puntos, rondas y palabras usadas?')) return;
+      S.teams.forEach(t => { t.pts = 0; }); S.usedIds.clear(); S.round = 0;
+      save(); renderScore(); nextWord(); return;
+    case 'word': {
+      const w = WORDS.find(x => x.id === ds.id);
+      if (!w || busy) return;
+      if (S.status === 'playing' && S.used.size && !panel.confirm(`¿Cambiar a «${w.t}»?`)) return;
+      loadWord(w); return;
+    }
+  }
+  save(); renderScore(); renderPanel();
+}
+
+function renderPanel() {
+  if (!panel || panel.closed) return;
+  const d = panel.document, g = id => d.getElementById(id);
+  if (!g('p-answer')) return;
+  const e = S.entry, playing = S.status === 'playing';
+  g('p-cat').textContent = e ? `${CATS[e.c]} · Ronda ${S.round}` : '';
+  g('p-answer').textContent = e ? e.t : '—';
+  g('p-hint').textContent = e ? 'Pista: ' + e.h : '';
+  const st = {
+    idle: 'Sin palabra todavía.',
+    playing: `Velas ${S.lit}/${S.total} · consultadas: ${[...S.used].join(' ') || '—'}${S.hintShown ? ' · pista usada' : ''}`,
+    won: '✓ La adivinaron. Enter o «Siguiente palabra».',
+    lost: '✗ Se apagaron las velas. Enter o «Siguiente palabra».',
+  }[S.status];
+  g('p-status').textContent = (busy ? '⏳ El espíritu se mueve (Esc acelera) · ' : '') + st;
+  ['yes', 'no', 'hint', 'reveal'].forEach(a => { d.querySelector(`[data-act="${a}"]`).disabled = busy || !playing; });
+  d.querySelector('[data-act="next"]').disabled = busy;
+  g('p-filter').value = S.settings.filter;
+  g('p-candles').value = S.settings.candles;
+  g('p-sound').checked = S.settings.sound;
+  g('p-vol').value = S.settings.vol;
+  const c = (a, n) => a ? `✓ ${n}: ${esc(a.dataset.file)}` : `— ${n}: sin clip (pon ${n}.mp3 en la carpeta del juego)`;
+  g('p-clips').innerHTML = c(clips.win, 'ganar') + '<br>' + c(clips.lose, 'perder');
+  const ae = d.activeElement;
+  if (!(ae && ae.classList && ae.classList.contains('tname'))) {
+    g('p-teams').innerHTML = S.teams.map((t, i) => `<div class="team">
+      <input class="tname" data-name="${i}" value="${esc(t.name)}">
+      <b>${t.pts}</b>
+      <button data-act="plus" data-i="${i}">+1</button><button data-act="minus" data-i="${i}">−1</button>
+    </div>`).join('');
+  }
+  g('p-words').innerHTML = Object.keys(CATS).map(c => `<div style="break-inside:avoid;margin-bottom:10px"><b>${CATS[c]}</b>${
+    WORDS.filter(w => w.c === c).map(w => `<span class="w ${S.usedIds.has(w.id) ? 'used' : ''} ${e && e.id === w.id ? 'cur' : ''}" data-act="word" data-id="${esc(w.id)}">${esc(w.t)}</span>`).join('')
+  }</div>`).join('');
+}
+
+/* ============================================================ Arranque */
+function fit() {
+  const s = Math.min(innerWidth / 1280, innerHeight / 900);
+  $('#stage').style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+renderScore();
+
+// parpadeo ocasional de las luces
+setInterval(() => {
+  if (Math.random() < 0.55) return;
+  document.body.classList.add('dip');
+  setTimeout(() => document.body.classList.remove('dip'), 90 + Math.random() * 260);
+}, 9000);
+
+$('#hostbtn').onclick = openPanel;
+$('#start').onclick = () => {
+  audio.start();
+  $('#intro').classList.add('gone');
+  setTimeout(() => $('#intro').remove(), 1300);
+  openPanel();
+  nextWord();
+};
+addEventListener('beforeunload', () => { if (panel && !panel.closed) panel.close(); });
+</script>
+</body>
+</html>
